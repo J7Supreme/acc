@@ -1,591 +1,395 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  Menu, ChevronRight, Target, Zap, ShieldCheck, Info, 
-  Users, Layers, Search, Eye, Activity, Cpu, MousePointer2, 
-  Maximize2, Smartphone, Box, Compass, Edit3, Plus, Code, Sparkles,
-  MessageSquare, RefreshCw, ClipboardCheck, Layout, Laptop, Image as ImageIcon,
-  PlayCircle, ExternalLink, Shield, Lightbulb, Workflow, Scale,
-  CheckCircle2, TrendingUp, Calendar, ZapOff, UserCheck
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACC Design Doc</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Mermaid for Flowcharts -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .mermaid svg { max-width: 100% !important; height: auto !important; }
+        .transition-all { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-white text-gray-800">
+    <div id="root"></div>
 
-// --- DATA STRUCTURES ---
+    <script type="text/babel">
+        const { useState, useMemo, useEffect, useRef } = React;
 
-const NAVIGATION = [
-  { 
-    id: 'intro', 
-    label: '01 Introduction', 
-    sub: [
-      { id: 'vision', label: 'Vision & Philosophy' }
-    ] 
-  },
-  { 
-    id: 'design', 
-    label: '02 Core Principles', 
-    sub: [
-      { id: 'teammate', label: 'First Principles' },
-      { id: 'principles', label: 'Design Principles' }
-    ] 
-  },
-  { 
-    id: 'framework', 
-    label: '03 ACC Framework', 
-    sub: [
-      { id: 'whatis', label: 'What is ACC?' },
-      { id: 'mental', label: 'Mental Model' }
-    ] 
-  },
-  { 
-    id: 'journey', 
-    label: '04 Journey Features', 
-    sub: [
-      { id: 'goal', label: 'Goal Settings' },
-      { id: 'build', label: 'AI Building & Simulation' },
-      { id: 'healing', label: 'Self-Healing' },
-      { id: 'upgrade', label: 'AI Agent Upgrade' }
-    ] 
-  },
-  { 
-    id: 'general', 
-    label: '05 General Features', 
-    sub: [
-      { id: 'omnipresent', label: 'Multi-platform / tool integration' },
-      { id: 'smartsearch', label: 'Smart search' },
-      { id: 'intentspace', label: 'Intent space' },
-      { id: 'Artifact', label: 'Artifact' },
-      { id: 'collaboration', label: 'Collaborative model' },
-    ] 
-  }
-];
+        const Icon = ({ name, size = 18, className = "", strokeWidth = 2 }) => {
+            const iconRef = useRef(null);
+            useEffect(() => {
+                if (iconRef.current && window.lucide) {
+                    lucide.createIcons({
+                        targets: [iconRef.current],
+                        attrs: {
+                            'stroke-width': strokeWidth,
+                            'width': size,
+                            'height': size
+                        }
+                    });
+                }
+            }, [name, size, className]);
 
-const FEATURES_CONTENT = {
-  goal: {
-    title: "Goal Settings",
-    intro: "Assignment of PBC goals; users focus on outcomes while ACC handles operational configs.",
-    value: "Users spend less time on manual configurations and more on higher-value work.",
-    tech: "Autonomous planning agents with real-time feedback loops and adaptive strategy execution.",
-    gifUrl: "https://lh3.googleusercontent.com/u/0/d/1HtelWjYQiCwQbangH7_bDtxdkizEQWv2", 
-    chart: `flowchart TD
-    A[ACC absorbs updated company data]
-    B[User defines or updates goal]
-    C[User sets or confirms boundaries]
-    D[ACC proposes execution strategy]
-    E[User reviews and approves direction]
-    F[ACC executes and adapts over time]
-    G[User tracks progress at goal level]
-    H[User updates goal or constraints]
-    I[ACC evaluates outcomes and learns]
+            return <i ref={iconRef} data-lucide={name} className={className}></i>;
+        };
 
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
-    H --> C
-    G --> I
-    I --> B`
-  },
-  build: {
-    title: "AI Building & Simulation",
-    intro: "Proactive building and sandbox comparison of cloud/app solutions to remove guesswork.",
-    value: "Removes guesswork by showing the best options before risk or commitment.",
-    tech: "Sandboxed digital twins and cost-analysis simulation engines.",
-    gifUrl: "", 
-    chart: `flowchart TD
-    A[Goal exists or is updated in Goal Settings]
-    B[ACC activates proactively based on the goal]
-    C[ACC creates a plan and timeline for solution exploration]
-    D[ACC builds multiple candidate application and cloud solutions]
-    E[ACC simulates and compares options in a sandbox]
-    F[ACC summarizes trade-offs and recommends best fit]
-    G[User reviews recommendation]
-    H{Approve to move forward?}
-    I[Proceed to real implementation workflow]
-    J[Adjust constraints or goal]
-    
-    A --> B --> C --> D --> E --> F --> G --> H
-    H -- Yes --> I
-    H -- No --> J --> C`
-  },
-  healing: {
-    title: "Self-Healing",
-    intro: "ACC autonomously resolves alerts, set up task queues and solve them. When human confirmation is required, ACC prompts users for approval through the available software or hardware interface.",
-    value: "Shifts operations from reactive firefighting to calm, controlled oversight.",
-    tech: "Self-correcting feedback loops and automated remediation scripts.",
-    gifUrl: "", 
-    chart: `flowchart TD
-    A[Alert detected and correlated]
-    B[ACC classifies alert and assesses risk]
-    C{Can ACC act autonomously?}
-    D[ACC creates resolution tickets and task queue]
-    E[Tickets visible in Kanban view for user oversight]
-    F[ACC executes resolution tasks]
-    G{Human approval required?}
-    H[ACC prompts user for approval]
-    I[User approves, rejects, or modifies action]
-    J[ACC validates recovery]
-    K[Ticket moved to Resolved]
-    L[Post-action summary and learning]
+        const NAVIGATION = [
+            { id: 'intro', label: '01 Introduction', sub: [{ id: 'vision', label: 'Vision & Philosophy' }] },
+            { id: 'design', label: '02 Core Principles', sub: [{ id: 'teammate', label: 'First Principles' }, { id: 'principles', label: 'Design Principles' }] },
+            { id: 'framework', label: '03 ACC Framework', sub: [{ id: 'whatis', label: 'What is ACC?' }, { id: 'mental', label: 'Mental Model' }] },
+            { id: 'journey', label: '04 Journey Features', sub: [
+                { id: 'goal', label: 'Goal Settings' },
+                { id: 'build', label: 'AI Building & Simulation' },
+                { id: 'healing', label: 'Self-Healing' },
+                { id: 'upgrade', label: 'AI Agent Upgrade' }
+            ]},
+            { id: 'general', label: '05 General Features', sub: [
+                { id: 'smartsearch', label: 'Smart search' },
+                { id: 'intentspace', label: 'Intent space' },
+                { id: 'vibe', label: 'Vibe Clouding' },
+                { id: 'predictive', label: 'Predictive UI' },
+                { id: 'collaboration', label: 'Collaboration' },
+            ]}
+        ];
 
-    A --> B
-    B --> C
-    C -- Yes --> D
-    C -- No --> H
-    D --> E
-    E --> F
-    F --> G
-    G -- Yes --> H
-    G -- No --> J
-    H --> I
-    I --> F
-    J --> K
-    K --> L`
-  },
-  upgrade: {
-    title: "AI Agent Upgrade",
-    intro: "Continuous learning and versioning of specialized agents based on past performance metrics.",
-    value: "Ensures the system grows smarter and more aligned with specific business logic over time.",
-    tech: "Evolutionary algorithms and performance-weighted model fine-tuning.",
-    gifUrl: "", 
-    chart: `graph TD
-      A[Performance Data] --> B[Gap Analysis]
-      B --> C[Upgrade Training]
-      C --> D[Model Validation]
-      D --> E[Deployment]`
-  }
-};
+        const PRINCIPLES = [
+            { title: "Clarity First (Super Simple)", desc: "Strip away distractions. Present only the essential information so users can quickly understand, decide, and act with confidence.", tag: "Simplicity", icon: "eye" },
+            { title: "Natural Interactions", desc: "Design experiences that feel intuitive and familiar—new technology should feel like second nature. Target: Key decisions within 3 clicks.", tag: "Speed", icon: "mouse-pointer-2" },
+            { title: "Scalable by Design", desc: "Solutions should seamlessly extend across cloud services, products, and industries without losing coherence.", tag: "Scalability", icon: "layers" },
+            { title: "Adaptable for All", desc: "Every user should experience a personalized interface and AI-generated content that adapts to their unique context, situation, and location.", tag: "Personalization", icon: "user-cog" },
+            { title: "Accessible Everywhere", desc: "Ensure experiences are inclusive and available across devices, platforms, and contexts (Omnipresent).", tag: "Omnipresent", icon: "smartphone" },
+            { title: "Intent-based UX", desc: "Empower users to explore their true intent via why-driven thinking (e.g., 5 Whys) and spark imagination via example prompts.", tag: "Intent", icon: "sparkles" },
+            { title: "Radical Transparency", desc: "High autonomy necessitates clear communication about what the agent is doing, why, and how sure it is (XAI).", tag: "Trust", icon: "shield-check" }
+        ];
 
-// --- HELPER COMPONENTS ---
+        const FEATURES_CONTENT = {
+            goal: {
+                title: "Goal Settings",
+                intro: "Assignment of PBC (Performance Business Control) goals; users focus on outcomes while ACC handles operational configs.",
+                value: "Users spend less time on manual configurations and more on higher-value work.",
+                tech: "Autonomous planning agents with real-time feedback loops and adaptive strategy execution.",
+                chart: `flowchart TD
+                A[ACC absorbs updated company data] --> B[User defines goal]
+                B --> C[User sets boundaries]
+                C --> D[ACC proposes execution strategy]
+                D --> E[User reviews and approves]
+                E --> F[ACC executes and adapts]
+                F --> G[User tracks progress at goal level]`
+            },
+            build: {
+                title: "AI Building & Simulation",
+                intro: "Proactive building and sandbox comparison of cloud/app solutions to remove guesswork.",
+                value: "Removes guesswork by showing the best options before risk or commitment.",
+                tech: "Sandboxed digital twins and cost-analysis simulation engines.",
+                chart: `flowchart TD
+                A[Goal Updated] --> B[ACC activates proactively]
+                B --> C[ACC builds multiple candidates]
+                C --> D[Simulate & compare in sandbox]
+                D --> E[Summarize trade-offs]
+                E --> F{Approve?}
+                F -- Yes --> G[Implementation Workflow]
+                F -- No --> H[Adjust constraints]`
+            },
+            healing: {
+                title: "Self-Healing",
+                intro: "ACC autonomously resolves alerts, set up task queues and solve them. Prompts for approval only for critical or high-risk actions.",
+                value: "Shifts operations from reactive firefighting to calm, controlled oversight.",
+                tech: "Self-correcting feedback loops and automated remediation scripts.",
+                chart: `flowchart TD
+                A[Alert detected] --> B[ACC classifies risk]
+                B --> C{Autonomous?}
+                C -- Yes --> D[Create task queue]
+                C -- No --> H[Prompt User]
+                D --> E[Execute Tasks]
+                E --> G{Critical Risk?}
+                G -- Yes --> H
+                G -- No --> J[Validate Recovery]
+                H --> I[User Approves/Modifies]
+                I --> E
+                J --> K[Resolved]`
+            },
+            upgrade: {
+                title: "AI Agent Upgrade",
+                intro: "Continuous learning and versioning of specialized agents based on past performance metrics.",
+                value: "Ensures the system grows smarter and more aligned with specific business logic over time.",
+                tech: "Evolutionary algorithms and performance-weighted model fine-tuning.",
+                chart: `graph TD
+                A[Performance Data] --> B[Gap Analysis]
+                B --> C[Upgrade Training]
+                C --> D[Model Validation]
+                D --> E[Deployment]`
+            }
+        };
 
-const MermaidChart = ({ chart }) => {
-  useEffect(() => {
-    if (window.mermaid) {
-      // Clear previous content to avoid duplicate rendering or artifacts
-      const container = document.querySelector('.mermaid-container');
-      if (container) container.innerHTML = `<div class="mermaid">${chart}</div>`;
-      window.mermaid.contentLoaded();
-    }
-  }, [chart]);
+        const MermaidChart = ({ chart }) => {
+            const chartRef = useRef(null);
+            useEffect(() => {
+                if (window.mermaid && chartRef.current) {
+                    chartRef.current.removeAttribute('data-processed');
+                    chartRef.current.innerHTML = chart;
+                    mermaid.contentLoaded();
+                }
+            }, [chart]);
 
-  return (
-    <div className="mermaid-container bg-white p-8 rounded-lg border border-gray-100 shadow-inner flex justify-center w-full min-h-[400px]">
-      <div className="mermaid">
-        {chart}
-      </div>
-    </div>
-  );
-};
+            return (
+                <div className="bg-white p-8 rounded-lg border border-gray-100 shadow-inner flex justify-center w-full min-h-[300px] overflow-x-auto">
+                    <div ref={chartRef} className="mermaid"></div>
+                </div>
+            );
+        };
 
-const VideoPlayer = () => {
-  const driveFileId = "11bYWdVbQ5v4BIqy0EU32NecK6QBZf602";
-  const driveEmbedUrl = `https://drive.google.com/file/d/${driveFileId}/preview`;
-
-  return (
-    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative border border-gray-200 shadow-xl">
-      <iframe
-        className="w-full h-full border-none"
-        src={driveEmbedUrl}
-        allow="autoplay; encrypted-media"
-        allowFullScreen
-        title="ACC Vision 2030"
-        referrerPolicy="no-referrer"
-      ></iframe>
-    </div>
-  );
-};
-
-// --- UI SECTIONS ---
-
-const EmptyState = ({ title }) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] border-2 border-dashed border-gray-200 rounded-lg p-12 bg-gray-50/50 animate-in fade-in duration-500">
-    <div className="w-16 h-16 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm mb-6 text-gray-300">
-      <Edit3 size={24} />
-    </div>
-    <span className="px-3 py-1 bg-gray-200 text-gray-600 text-[10px] font-bold uppercase tracking-widest rounded-full mb-4">
-      Awaiting Content
-    </span>
-    <h2 className="text-2xl font-light text-gray-900 mb-2">{title}</h2>
-    <p className="text-gray-500 text-sm max-w-sm text-center leading-relaxed">
-      This module is in the technical writing stage. Detailed specs will appear here once finalized.
-    </p>
-  </div>
-);
-
-const FeatureTemplate = ({ data }) => (
-  <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20 max-w-5xl w-full">
-    <h1 className="text-4xl font-light mb-2 text-gray-900">{data.title}</h1>
-    <div className="h-1 w-12 bg-blue-600 mb-8" />
-
-    <div className="w-full aspect-video bg-gray-100 border border-gray-200 rounded-xl mb-12 flex flex-col items-center justify-center text-gray-400 overflow-hidden relative group">
-      {data.gifUrl ? (
-        <img 
-          src={data.gifUrl} 
-          alt={`${data.title} visualization`} 
-          className="w-full h-full object-contain bg-white"
-          referrerPolicy="no-referrer"
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
-      ) : (
-        <div className="flex flex-col items-center gap-3">
-          <ImageIcon size={48} strokeWidth={1} className="group-hover:text-blue-400 transition-colors" />
-          <span className="text-sm font-medium uppercase tracking-widest text-center px-4">Visualization Placeholder</span>
-        </div>
-      )}
-    </div>
-
-    <div className="flex flex-col gap-6 mb-16">
-      {[
-        { label: "01 Introduction", icon: <Info size={12}/>, color: "blue", text: data.intro },
-        { label: "02 Value Proposition", icon: <Zap size={12}/>, color: "green", text: data.value },
-        { label: "03 Technology", icon: <Cpu size={12}/>, color: "purple", text: data.tech }
-      ].map((block, idx) => (
-        <div key={idx} className="p-8 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-          <h4 className={`text-xs font-bold uppercase tracking-widest text-${block.color}-600 mb-4 flex items-center gap-2`}>
-            <span className={`flex items-center justify-center w-5 h-5 rounded-full bg-${block.color}-50 text-${block.color}-600`}>
-              {block.icon}
-            </span>
-            {block.label}
-          </h4>
-          <p className="text-lg leading-relaxed text-gray-700 font-light">{block.text}</p>
-        </div>
-      ))}
-    </div>
-
-    <section className="bg-gray-50 border border-gray-200 p-10 rounded-xl shadow-sm">
-      <div className="flex items-center justify-between mb-8">
-        <h3 className="text-xl font-semibold flex items-center gap-3 text-gray-900">
-          <Activity size={24} className="text-blue-600"/> Interaction Logic
-        </h3>
-        <span className="text-[10px] font-bold text-gray-400 bg-gray-200 px-2 py-1 rounded flex items-center gap-1 uppercase tracking-tighter">
-          <Code size={10} /> Mermaid
-        </span>
-      </div>
-      <MermaidChart chart={data.chart} />
-    </section>
-  </div>
-);
-
-const App = () => {
-  const [activeTab, setActiveTab] = useState('vision');
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
-
-  const activePathData = useMemo(() => {
-    for (const cat of NAVIGATION) {
-      const sub = cat.sub.find(s => s.id === activeTab);
-      if (sub) return { catLabel: cat.label, subLabel: sub.label, catId: cat.id, firstSubId: cat.sub[0].id };
-    }
-    return { catLabel: '', subLabel: '', catId: '', firstSubId: '' };
-  }, [activeTab]);
-
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js';
-    script.async = true;
-    script.onload = () => {
-      window.mermaid.initialize({
-        startOnLoad: true,
-        theme: 'base',
-        themeVariables: {
-          primaryColor: '#eff6ff',
-          primaryTextColor: '#1e40af',
-          primaryBorderColor: '#3b82f6',
-          lineColor: '#94a3b8',
-          fontSize: '14px'
-        }
-      });
-    };
-    document.head.appendChild(script);
-  }, []);
-
-  const renderContent = () => {
-    if (activeTab === 'vision') return (
-      <div className="max-w-5xl animate-in fade-in duration-700">
-        <h1 className="text-5xl font-extralight mb-12 text-gray-900">Vision & Philosophy</h1>
-        
-        <div className="mb-20 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-              Agentic Cloud 2030 Preview
-            </h3>
-          </div>
-          <VideoPlayer />
-        </div>
-
-        <div className="border-l-4 border-blue-600 pl-8 py-6 mb-20 bg-blue-50/20 rounded-r-xl">
-          <h2 className="text-3xl font-light italic text-gray-800 leading-snug mb-4">
-            "By 2030, the Agentic Cloud Console will become a universally accessible AI system that autonomously builds, manages, and optimizes the cloud."
-          </h2>
-          <p className="text-gray-500 text-lg font-light">Empowering users to build and scale ideas with unprecedented speed and precision.</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-16 pb-20">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-8 flex items-center gap-3">
-              <div className="h-px w-8 bg-gray-200" /> Design Philosophy
-            </h3>
-            <h4 className="text-2xl font-light mb-6 text-gray-900">Human-Centered AI Experience</h4>
-            <div className="space-y-6 text-gray-600 leading-relaxed text-lg font-light">
-              <p>We design AI experiences that enhance human capability — not replace it.</p>
-              <p>Our goal isn’t to build Level 5 AI agents for their own sake, but to create trust-driven, professional partners that empower people in their work.</p>
-            </div>
-          </div>
-          
-          <div className="bg-white p-10 border border-gray-100 shadow-sm rounded-2xl group hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('teammate')}>
-            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:text-white transition-all">
-              <Users size={28} />
-            </div>
-            <h4 className="text-xl font-medium mb-4 text-gray-900">The Teammate Model</h4>
-            <p className="text-gray-500 leading-relaxed italic mb-6">
-              "Building professional trust through mutual understanding and transparent outcomes."
-            </p>
-            <span className="text-blue-600 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-              Explore First Principles <ChevronRight size={14} />
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-
-    if (activeTab === 'teammate') return (
-      <div className="max-w-5xl animate-in fade-in duration-700">
-        <h1 className="text-5xl font-extralight mb-8 text-gray-900">First Principles</h1>
-        <div className="h-1 w-12 bg-blue-600 mb-10" />
-        <div className="flex flex-col gap-10 mb-16">
-          <div className="p-10 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm">
-            <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-600 mb-6 flex items-center gap-2">
-              <Layers size={14} /> Evolution of Technology
-            </h3>
-            <p className="text-gray-600 leading-loose text-xl font-light">
-              Technology has evolved from a tool, to an assistant. Now with an Agentic AI we can have a truly autonomous partner, defined by its human-like behavior.
-            </p>
-          </div>
-          
-          <div className="p-10 bg-blue-600 text-white rounded-2xl shadow-xl relative overflow-hidden">
-            <div className="relative z-10">
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60 mb-8 flex items-center gap-2">
-                <Activity size={14} /> The Behavior Shift
-              </h3>
-              <ul className="space-y-6">
-                {[
-                  "Takes initiative without prompting",
-                  "Manages complex goals over time",
-                  "Reports on its own progress and learnings"
-                ].map((item, i) => (
-                  <li key={i} className="flex gap-4 items-center">
-                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                      <Zap size={16} className="text-yellow-300" />
+        const FeatureTemplate = ({ data }) => (
+            <div className="animate-in fade-in duration-500 pb-20 max-w-5xl w-full">
+                <h1 className="text-4xl font-light mb-2 text-gray-900">{data.title}</h1>
+                <div className="h-1 w-12 bg-blue-600 mb-8" />
+                <div className="grid gap-6 mb-16">
+                    <div className="p-8 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all">
+                        <h4 className="text-xs font-bold uppercase text-blue-600 mb-4 flex items-center gap-2"><Icon name="info" size={14}/> 01 Introduction</h4>
+                        <p className="text-lg font-light leading-relaxed">{data.intro}</p>
                     </div>
-                    <span className="text-xl font-light">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-          </div>
-        </div>
-      </div>
-    );
-
-    if (activeTab === 'principles') return (
-      <div className="max-w-5xl animate-in slide-in-from-right-4 duration-500">
-        <h1 className="text-4xl font-light mb-12 text-gray-900">Core Design Principles</h1>
-        <div className="grid grid-cols-1 gap-6">
-          {[
-            { title: "Clarity First (Super Simple)", desc: "Strip away distractions. Present only the essential information so users can quickly understand, decide, and act with confidence.", icon: <Eye />, tag: "Simplicity" },
-            { title: "Natural Interactions", desc: "Design experiences that feel intuitive and familiar—new technology should feel like second nature, not something to be learned from scratch. Target: Key decisions to be done within 3 clicks.", icon: <MousePointer2 />, tag: "Speed" },
-            { title: "Scalable by Design", desc: "Solutions should seamlessly extend across cloud services, products, and industries without losing coherence or quality.", icon: <Layers />, tag: "Scalability" },
-            { title: "Adaptable for All (Personalization)", desc: "Accommodate the diverse needs of end-users, administrators, and business stakeholders by enabling adaptable workflows and outcomes. Every user should experience a personalized interface and AI-generated content that adapts to their unique context, situation, and location.", icon: <Maximize2 />, tag: "Personalization" },
-            { title: "Accessible Everywhere (Omnipresent)", desc: "Ensure experiences are inclusive and available across devices, platforms, and contexts—so users can engage when and where they need.", icon: <Smartphone />, tag: "Omnipresent" },
-            { title: "Intent-based UX", desc: "Empower users to explore their true intent by guiding them through why-driven thinking (e.g., the 5 Whys). The AI system should spark imagination by demonstrating its capabilities—offering example prompts, suggesting next steps, and enabling users to save and build upon past prompts.", icon: <Lightbulb />, tag: "Intent" },
-            { title: "Trust Through Radical Transparency and Explainability (XAI)", desc: "The agent's high level of autonomy necessitates clear communication about what it is doing, why, and how sure it is. Without this, the user will quickly lose confidence in the agent's actions, especially in a high-stakes cloud environment.", icon: <ShieldCheck />, tag: "Trust" }
-          ].map((p, i) => (
-            <div key={i} className="flex items-start gap-8 p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-lg transition-all group">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                {p.icon}
-              </div>
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h4 className="text-lg font-semibold text-gray-900">{p.title}</h4>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400 bg-gray-50 px-2 py-0.5 rounded">{p.tag}</span>
+                    <div className="p-8 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all">
+                        <h4 className="text-xs font-bold uppercase text-green-600 mb-4 flex items-center gap-2"><Icon name="zap" size={14}/> 02 Value Proposition</h4>
+                        <p className="text-lg font-light leading-relaxed">{data.value}</p>
+                    </div>
+                    <div className="p-8 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all">
+                        <h4 className="text-xs font-bold uppercase text-purple-600 mb-4 flex items-center gap-2"><Icon name="cpu" size={14}/> 03 Technology</h4>
+                        <p className="text-lg font-light leading-relaxed">{data.tech}</p>
+                    </div>
                 </div>
-                <p className="text-gray-500 font-light leading-relaxed">{p.desc}</p>
-              </div>
+                <section className="bg-gray-50 border p-10 rounded-xl">
+                    <h3 className="text-xl font-semibold mb-8 flex items-center gap-3"><Icon name="activity" className="text-blue-600"/> Interaction Logic</h3>
+                    <MermaidChart chart={data.chart} />
+                </section>
             </div>
-          ))}
-        </div>
-      </div>
-    );
+        );
 
-    if (activeTab === 'whatis') return (
-      <div className="max-w-5xl animate-in fade-in duration-700 pb-20">
-        <h1 className="text-4xl font-light mb-2 text-gray-900">What is ACC?</h1>
-        <div className="h-1 w-12 bg-blue-600 mb-12" />
-        
-        <section className="mb-16">
-          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-8 flex items-center gap-3">
-            <div className="h-px w-8 bg-gray-200" /> 01. Core Definition
-          </h3>
-          <div className="p-10 bg-white border border-gray-200 rounded-xl shadow-sm border-l-8 border-l-blue-600">
-            <p className="text-2xl font-light text-gray-800 leading-relaxed mb-6">
-              An Agentic Cloud Console is a <span className="text-blue-600 font-medium">next-generation cloud management platform</span> where AI agents serve as intelligent, autonomous partners.
-            </p>
-            <p className="text-lg text-gray-600 leading-loose font-light">
-              Agents plan, build, operate, and optimize cloud resources on behalf of users, transforming the console from a collection of menus and buttons into an <span className="italic font-normal text-gray-900">outcome-driven, collaborative experience.</span>
-            </p>
-          </div>
-        </section>
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('vision');
+            const [isSidebarOpen, setSidebarOpen] = useState(true);
 
-        <section>
-          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-8 flex items-center gap-3">
-            <div className="h-px w-8 bg-gray-200" /> 02. Core DNA
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { label: "Vibe Clouding", color: "blue", desc: "Visual styling reflecting context and state." },
-              { label: "Intent-Based & Outcome-Oriented UX", color: "purple", desc: "Focus on goals rather than clicks." },
-              { label: "Omnipresent", color: "indigo", desc: "Available across all platforms and contexts." },
-              { label: "Human-centered AI", color: "green", desc: "AI that augments and empowers the human expert." }
-            ].map((kw, i) => (
-              <div key={i} className={`p-6 rounded-2xl bg-${kw.color}-50/50 border border-${kw.color}-100 flex items-start gap-4 hover:shadow-md transition-shadow`}>
-                <div className={`w-10 h-10 rounded-full bg-${kw.color}-100 text-${kw.color}-600 flex items-center justify-center shrink-0`}>
-                  <Sparkles size={18} />
+            useEffect(() => {
+                mermaid.initialize({ 
+                    startOnLoad: true, 
+                    theme: 'base',
+                    themeVariables: {
+                        primaryColor: '#eff6ff',
+                        primaryTextColor: '#1e40af',
+                        primaryBorderColor: '#3b82f6',
+                        lineColor: '#94a3b8'
+                    }
+                });
+            }, []);
+
+            const activePathData = useMemo(() => {
+                for (const cat of NAVIGATION) {
+                    const sub = cat.sub.find(s => s.id === activeTab);
+                    if (sub) return { catLabel: cat.label, subLabel: sub.label };
+                }
+                return { catLabel: '', subLabel: '' };
+            }, [activeTab]);
+
+            const renderContent = () => {
+                if (activeTab === 'vision') return (
+                    <div className="max-w-5xl animate-in fade-in duration-700">
+                        <h1 className="text-5xl font-extralight mb-12">Vision & Philosophy</h1>
+                        <div className="border-l-4 border-blue-600 pl-8 py-6 mb-16 bg-blue-50/20 rounded-r-xl">
+                            <h2 className="text-3xl font-light italic text-gray-800 leading-snug mb-4">
+                                "By 2030, the Agentic Cloud Console will become a universally accessible AI system that autonomously builds, manages, and optimizes the cloud."
+                            </h2>
+                            <p className="text-gray-500 text-lg font-light">Empowering users to build and scale ideas with unprecedented speed and precision.</p>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <div className="p-10 bg-white border rounded-2xl">
+                                <Icon name="shield-check" size={32} className="text-blue-600 mb-6" />
+                                <h3 className="text-xl font-medium mb-4">Human-Centered AI</h3>
+                                <p className="text-gray-500 font-light leading-relaxed">
+                                    We design AI experiences that enhance human capability — not replace it. Our goal is to create trust-driven, professional partners.
+                                </p>
+                            </div>
+                            <div className="p-10 bg-white border rounded-2xl">
+                                <Icon name="users" size={32} className="text-blue-600 mb-6" />
+                                <h3 className="text-xl font-medium mb-4">Trust-Driven Partners</h3>
+                                <p className="text-gray-500 font-light leading-relaxed">
+                                    Agents aren't just tools; they are Level 5 partners that empower people in high-stakes professional environments.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                );
+
+                if (activeTab === 'teammate') return (
+                    <div className="max-w-5xl animate-in fade-in">
+                        <h1 className="text-4xl font-light mb-8">First Principles: The Teammate Model</h1>
+                        <div className="bg-blue-600 text-white p-10 rounded-2xl mb-12 shadow-xl">
+                            <p className="text-2xl font-light leading-relaxed">
+                                Technology has evolved from a tool, to an assistant. Now with Agentic AI, we have a <span className="font-bold underline">truly autonomous partner</span>.
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {[
+                                { title: "Proactive", icon: "zap", desc: "Takes initiative without constant human prompting." },
+                                { title: "Goal-Oriented", icon: "target", desc: "Manages complex outcomes over extended timelines." },
+                                { title: "Transparent", icon: "eye", desc: "Reports on its own progress and learnings clearly." }
+                            ].map((item, i) => (
+                                <div key={i} className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
+                                    <Icon name={item.icon} className="text-blue-600 mb-4" size={24} />
+                                    <h4 className="font-semibold mb-2">{item.title}</h4>
+                                    <p className="text-sm text-gray-500 font-light">{item.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+                if (activeTab === 'principles') return (
+                    <div className="max-w-5xl animate-in fade-in">
+                        <h1 className="text-4xl font-light mb-12">Core Design Principles</h1>
+                        <div className="grid gap-6">
+                            {PRINCIPLES.map((p, i) => (
+                                <div key={i} className="flex items-start gap-6 p-8 bg-white border border-gray-100 rounded-xl hover:shadow-lg transition-all group">
+                                    <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                        <Icon name={p.icon} />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <h4 className="text-lg font-semibold">{p.title}</h4>
+                                            <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400 bg-gray-50 px-2 py-0.5 rounded">{p.tag}</span>
+                                        </div>
+                                        <p className="text-gray-500 font-light leading-relaxed">{p.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+                if (activeTab === 'whatis') return (
+                    <div className="max-w-5xl animate-in fade-in">
+                        <h1 className="text-4xl font-light mb-12">What is ACC?</h1>
+                        <div className="p-10 bg-white border-l-8 border-blue-600 rounded-xl shadow-sm mb-12">
+                            <p className="text-2xl font-light text-gray-800 leading-relaxed">
+                                An Agentic Cloud Console is an <span className="text-blue-600 font-medium">intelligent, autonomous partner</span> that transforms cloud management from menus and buttons into an <span className="italic">outcome-driven experience.</span>
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="p-8 bg-gray-50 rounded-xl">
+                                <h4 className="font-bold mb-4 flex items-center gap-2"><Icon name="box" size={16}/> Traditional Console</h4>
+                                <ul className="text-sm space-y-2 text-gray-500 font-light">
+                                    <li>• Passive interaction</li>
+                                    <li>• Manual configuration</li>
+                                    <li>• Menu-driven complexity</li>
+                                </ul>
+                            </div>
+                            <div className="p-8 bg-blue-50 rounded-xl border border-blue-100">
+                                <h4 className="font-bold text-blue-700 mb-4 flex items-center gap-2"><Icon name="sparkles" size={16}/> Agentic Cloud Console</h4>
+                                <ul className="text-sm space-y-2 text-blue-600 font-medium">
+                                    <li>• Autonomous planning</li>
+                                    <li>• Outcome-based results</li>
+                                    <li>• Human-AI collaboration</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                );
+
+                if (activeTab === 'mental') return (
+                    <div className="max-w-5xl animate-in fade-in">
+                        <h1 className="text-4xl font-light mb-12">Mental Model</h1>
+                        <div className="space-y-8">
+                            <div className="p-8 bg-white border border-gray-200 rounded-xl">
+                                <h3 className="text-xl font-medium mb-6 flex items-center gap-3"><Icon name="user-check" className="text-blue-600"/> The Hired Expert</h3>
+                                <p className="text-gray-600 font-light text-lg mb-6">Treat the AI as a high-level consultant. You set the strategy; they manage the execution.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+                                    <div className="flex gap-3">
+                                        <Icon name="target" size={14} className="mt-1" />
+                                        <div><strong>PBC Goals:</strong> Performance Business Control for objective setting.</div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <Icon name="refresh-cw" size={14} className="mt-1" />
+                                        <div><strong>Check-ins:</strong> Weekly/Quarterly reporting cycles.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-900 text-white p-10 rounded-xl">
+                                <h4 className="text-xs uppercase tracking-widest text-gray-400 mb-6">Core Attributes</h4>
+                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12">
+                                    {["Vibe Clouding (Contextual UI)", "GenUI Personalization", "Omnipresent Access", "Autonomous Decision Making", "Project-Based Management", "Freeform Interaction"].map((attr, i) => (
+                                        <li key={i} className="flex items-center gap-3 font-light text-gray-300">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> {attr}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                );
+
+                const feature = FEATURES_CONTENT[activeTab];
+                if (feature) return <FeatureTemplate data={feature} />;
+
+                return (
+                    <div className="text-center py-20 animate-in zoom-in-95 duration-300">
+                        <Icon name="edit-3" size={48} className="mx-auto text-gray-200 mb-4" />
+                        <h2 className="text-2xl font-light">Content Finalizing</h2>
+                        <p className="text-gray-400">Technical documentation for {activePathData.subLabel} is currently under review.</p>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="flex h-screen overflow-hidden">
+                    <aside className={`${isSidebarOpen ? 'w-72' : 'w-16'} transition-all border-r bg-gray-50 flex flex-col shrink-0 z-20`}>
+                        <div className="h-16 flex items-center px-4 border-b bg-white shrink-0">
+                            {isSidebarOpen && <span className="font-bold text-[11px] uppercase tracking-[0.2em]">ACC Design Doc</span>}
+                            <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="ml-auto p-1.5 hover:bg-gray-200 rounded-md transition-all">
+                                <Icon name="menu" />
+                            </button>
+                        </div>
+                        <nav className="flex-1 overflow-y-auto py-6 no-scrollbar">
+                            {NAVIGATION.map(cat => (
+                                <div key={cat.id} className="mb-6">
+                                    {isSidebarOpen && <h4 className="px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 opacity-70">{cat.label}</h4>}
+                                    {cat.sub.map(item => (
+                                        <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full text-left px-6 py-2.5 text-sm flex items-center gap-3 transition-all ${activeTab === item.id ? 'bg-blue-50 text-blue-700 font-semibold border-r-4 border-blue-600' : 'hover:bg-gray-200/50 text-gray-600'}`}>
+                                            {isSidebarOpen ? item.label : <Icon name="box" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            ))}
+                        </nav>
+                    </aside>
+                    <main className="flex-1 flex flex-col overflow-hidden">
+                        <header className="h-16 border-b flex items-center justify-between px-8 bg-white shrink-0 z-10">
+                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                <span>{activePathData.catLabel?.split(' ')[1]}</span>
+                                <Icon name="chevron-right" size={12} />
+                                <span className="text-gray-900">{activePathData.subLabel}</span>
+                            </div>
+                        </header>
+                        <div className="flex-1 overflow-y-auto px-12 py-16 scroll-smooth bg-white">
+                            <div className="max-w-6xl mx-auto">{renderContent()}</div>
+                        </div>
+                    </main>
                 </div>
-                <div>
-                  <h4 className={`text-md font-semibold text-${kw.color}-800 mb-1`}>{kw.label}</h4>
-                  <p className="text-sm text-gray-500 font-light leading-snug">{kw.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    );
+            );
+        };
 
-    if (activeTab === 'mental') return (
-      <div className="max-w-5xl animate-in fade-in duration-700 pb-20">
-        <h1 className="text-4xl font-light mb-2 text-gray-900">Mental Model</h1>
-        <div className="h-1 w-12 bg-blue-600 mb-12" />
-        
-        <div className="flex flex-col gap-10">
-          {/* Core Framework */}
-          <div className="p-10 bg-white border border-gray-200 rounded-2xl shadow-sm hover:border-blue-300 transition-all border-l-8 border-l-blue-600">
-            <p className="text-2xl font-light text-gray-800 leading-relaxed">
-              Inspired by the First Principles of <span className="text-blue-600 font-medium">“how excellent teammates collaborate,”</span> we treat the Agentic Cloud Console (ACC) as a comparable mental model to a human teammate.
-            </p>
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 pt-8 border-t border-gray-100">
-              {[
-                { label: "Defined Roles", icon: <Shield size={16}/>, desc: "Setting clear boundaries and responsibilities." },
-                { label: "Performance Goals", icon: <Target size={16}/>, desc: "Established via PBC (Performance Business Control)." },
-                { label: "Check-in Cycles", icon: <RefreshCw size={16}/>, desc: "Weekly, quarterly, and yearly cadences." },
-                { label: "Open Discussion", icon: <MessageSquare size={16}/>, desc: "Evaluating performance and project discussions." }
-              ].map((item, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="text-blue-600 mt-1">{item.icon}</div>
-                  <div>
-                    <h5 className="font-semibold text-gray-900 text-sm">{item.label}</h5>
-                    <p className="text-xs text-gray-500 font-light">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Vertical Attributes List */}
-          <div className="p-10 bg-gray-50 border border-gray-200 rounded-2xl">
-            <ul className="flex flex-col gap-y-5 list-none p-0">
-              {[
-                "Vibe Clouding: Intent-Based & Outcome-Oriented UX",
-                "GenUI: Hyper Personalization",
-                "Omnipresent: Accessible Anywhere",
-                "Collaborative Super Agent: Build, Manage, and Monitor in a Single Platform",
-                "Autonomous Decision Making with Human-In-The-Loop",
-                "Freeform Interaction:",
-                "Project-Based Management"
-              ].map((text, i) => (
-                <li key={i} className="flex items-start gap-4 text-xl font-light text-gray-700 leading-relaxed border-b border-gray-200/50 pb-4 last:border-0 last:pb-0">
-                  <span className="text-blue-600 mt-1 flex-shrink-0">●</span>
-                  <span>{text}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    );
-
-    const feature = FEATURES_CONTENT[activeTab];
-    return feature ? <FeatureTemplate data={feature} /> : <EmptyState title={activePathData.subLabel} />;
-  };
-
-  return (
-    <div className="flex h-screen bg-white text-gray-800 font-sans selection:bg-blue-100 overflow-hidden">
-      <aside className={`${isSidebarOpen ? 'w-72' : 'w-16'} transition-all duration-300 border-r border-gray-200 bg-[#f8f9fa] flex flex-col z-50`}>
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-white shrink-0">
-          {isSidebarOpen && (
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-white">
-                <Activity size={14} />
-              </div>
-              <span className="font-bold text-[11px] tracking-[0.2em] text-gray-900 uppercase">ACC Portal</span>
-            </div>
-          )}
-          <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-1.5 hover:bg-gray-200 rounded-md transition-colors">
-            <Menu size={18} />
-          </button>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto py-6 no-scrollbar">
-          {NAVIGATION.map(cat => (
-            <div key={cat.id} className="mb-6">
-              {isSidebarOpen && (
-                <h4 className="px-6 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2 opacity-70">
-                  {cat.label}
-                </h4>
-              )}
-              {cat.sub.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full text-left px-6 py-2 text-sm flex items-center gap-3 transition-all
-                    ${activeTab === item.id 
-                      ? 'bg-blue-50 text-blue-700 font-semibold border-r-4 border-blue-600' 
-                      : 'hover:bg-gray-200/50 text-gray-600 border-r-4 border-transparent'
-                    }`}
-                >
-                  <span className={`w-1 h-1 rounded-full ${activeTab === item.id ? 'bg-blue-600' : 'bg-transparent'}`} />
-                  {isSidebarOpen ? item.label : <Box size={18} />}
-                </button>
-              ))}
-            </div>
-          ))}
-        </nav>
-      </aside>
-
-      <main className="flex-1 flex flex-col overflow-hidden bg-white">
-        <header className="h-16 border-b border-gray-200 flex items-center justify-between px-8 bg-white shrink-0 z-10">
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-            <span>{activePathData.catLabel?.split(' ')[1]}</span>
-            <ChevronRight size={12} />
-            <span className="text-gray-900">{activePathData.subLabel}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-blue-600 transition-colors" size={14} />
-              <input type="text" placeholder="Search specs..." className="w-40 bg-gray-50 border border-gray-200 rounded-lg pl-9 pr-4 py-1.5 text-xs focus:ring-1 focus:ring-blue-600 outline-none transition-all focus:w-60 focus:bg-white" />
-            </div>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto px-12 py-16 scroll-smooth">
-          <div className="max-w-6xl mx-auto flex justify-center">
-            {renderContent()}
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default App;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
